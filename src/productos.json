@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "title": "Lente de Sol Picazzio",
+    "description": "lente de sol con filtro uv y polarizado",
+    "code": "M6752 C2",
+    "price": "45.000",
+    "status": true,
+    "stock": "15",
+    "category": "Sol",
+    "thumbnails": []
+  }
+
+]
