@@ -13,39 +13,44 @@ import session from 'express-session'
 import MongoStore from 'connect-mongo'
 import passport from 'passport'
 import initializePassport from './config/passport.config.js'
+import config from './config/config.js'
 
-const PORT = 8080;
+const port = config.port
+const mongoURL = config.mongoURL
+const mongoDBName = config.mongoDBName
 
-const app = express();
+const app = express(); 
 app.use(express.json()); 
 app.use(express.static('./src/public')); 
 
+// configuracion de la sesion
 app.use(session({
-  store: MongoStore.create({
-    mongoUrl: 'mongodb+srv://andreapazvilla:andrepaz123@cluster0.2rfi0oa.mongodb.net/?retryWrites=true&w=majority',
-    dbName: 'newproyect',
-  }),
-  secret: 'secret',
-  resave: true,
-  saveUninitialized: true
+    store: MongoStore.create({
+        mongoUrl: mongoURL,
+        dbName: mongoDBName,
+        mongoOptions: {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+    }
+}),
+    secret: 'secret',
+    resave: true,
+    saveUninitialized: true
 }))
 
-// configuracion de passport
 initializePassport();
 app.use(passport.initialize());
 app.use(passport.session());
 
-// configuracion del motor de plantillas handlebars
 app.engine('handlebars', handlebars.engine());
 app.set('views', './src/views');
 app.set('view engine', 'handlebars');
 
 
-// Inicialización del servidor
 try {
-    await mongoose.connect('mongodb+srv://andreapazvilla:andrepaz123@cluster0.2rfi0oa.mongodb.net/?retryWrites=true&w=majority') 
-    const serverHttp = app.listen(PORT, () => console.log('server up')) 
-    const io = new Server(serverHttp)
+    await mongoose.connect(mongoURL) // conecta con la base de datos
+    const serverHttp = app.listen(port, () => console.log('server up'))  
+    const io = new Server(serverHttp) 
     
     app.use((req, res, next) => {
         req.io = io;
@@ -54,13 +59,11 @@ try {
     
     // Rutas
     app.get('/', (req, res) => {
-      if (req.session.user) {
-          // Si el usuario ya está autenticado, redireccionar a la vista de productos
-          res.render('index');
-      } else {
-          // Si el usuario no ha iniciado sesión, redireccionar a la vista de inicio de sesión
-          res.redirect('/login');
-      }
+    if (req.session.user) {
+        res.render('index');
+    } else {
+        res.redirect('/login');
+    }
     })
     
     app.use('/', viewsUserRouter); // registra el router de usuario en la ruta /
@@ -77,33 +80,32 @@ try {
 
         // Cargar los mensajes almacenados en la base de datos
         Message.find()
-          .then(messages => {
+        .then(messages => {
             socket.emit('messages', messages); 
-          })
-          .catch(error => {
+        })
+        .catch(error => {
             console.log(error.message);
-          });
+        });
     
         socket.on('message', data => {
-          // Guardar el mensaje en la base de datos
-          const newMessage = new Message({
+            // Guardar el mensaje en la base de datos
+        const newMessage = new Message({
             user: data.user,
             message: data.message
-          });
+        });
     
-          newMessage.save()
+        newMessage.save()
             .then(() => {
-              // Emitir el evento messages con los mensajes actualizados de la base de datos
-              Message.find()
+            Message.find()
                 .then(messages => {
-                  io.emit('messages', messages);
+                    io.emit('messages', messages);
                 })
                 .catch(error => {
-                  console.log(error.message);
+                    console.log(error.message);
                 });
             })
             .catch(error => {
-              console.log(error.message);
+                console.log(error.message);
             });
         });
 

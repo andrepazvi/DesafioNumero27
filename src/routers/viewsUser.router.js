@@ -1,43 +1,20 @@
 import { Router } from "express";
 import { isAuthenticated } from "../public/js/authMiddleware.js";
+import { 
+    viewsUserRegisterController,
+    viewsUserLoginController,
+    viewsUserProfileController,
+    viewsUserLogoutController 
+} from "../controllers/viewsUser.controller.js";
 
 const router = Router();
 
-router.get('/register', (req, res) => {
-    if (req.session.user) {
-        res.redirect('/profile');
-    } else {
-        res.render('register');
-    }
-});
+router.get('/register', viewsUserRegisterController); // Ruta para el registro de usuario
 
-router.get('/login', (req, res) => {
-    if (req.session.user) {
-        res.redirect('/products');
-    } else {
-        res.render('login');
-    }
-});
+router.get('/login', viewsUserLoginController); // Ruta para el inicio de sesión de usuario
 
-// Ruta para el perfil del usuario (privada, requiere estar autenticado)
-router.get('/profile', isAuthenticated, (req, res) => {
-    const userInfo = {
-        first_name: req.session.user.first_name,
-        last_name: req.session.user.last_name,
-        email: req.session.user.email,
-        age: req.session.user.age,
-    };
-    console.log(userInfo);
-    res.render('profile', userInfo);
-});
+router.get('/profile', isAuthenticated, viewsUserProfileController); // Ruta para el perfil del usuario
 
-router.get('/logout', isAuthenticated, (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            console.log(err.message);
-        }
-        res.redirect('/login');
-    });
-});
+router.get('/logout', isAuthenticated, viewsUserLogoutController); // Ruta para cerrar sesión
 
 export default router;

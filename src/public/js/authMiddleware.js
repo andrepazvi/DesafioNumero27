@@ -1,21 +1,29 @@
+import config from '../../config/config.js';
+
+// Datos del administrador desde el archivo .env
+const adminEmail = config.adminEmail;
+const adminPassword = config.adminPassword;
+
+// authMiddleware.js
 const isAuthenticated = (req, res, next) => {
     if (req.isAuthenticated()) {
-      next();
+        next();
     } else {
-      res.redirect('/login');
+        res.redirect('/login');
     }
-  };
-  
-  const isAdmin = (req, res, next) => {
+};
+
+const isAdmin = (req, res, next) => {
     if (req.isAuthenticated() && req.user.role === 'admin') {
-      next();
+        next();
     } else {
-      res.status(403).json({ message: 'Acceso no autorizado.' });
+        res.status(403).json({ message: 'Acceso no autorizado.' });
     }
-  };
-  
-  const hasAdminCredentials = (email, password) => {
-    return email === 'adminCoder@coder.com' && password === 'adminCod3r123';
-  };
-  
-  export { isAuthenticated, isAdmin, hasAdminCredentials };
+};
+
+const hasAdminCredentials = (email, password) => {
+    // Verificar si las credenciales coinciden con las del administrador
+    return email === adminEmail && password === adminPassword;
+};
+
+export { isAuthenticated, isAdmin, hasAdminCredentials };

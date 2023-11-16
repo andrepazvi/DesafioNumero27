@@ -1,5 +1,5 @@
 let socket = io() 
-const table = document.getElementById('realProductsTable')
+const table = document.getElementById('realProductsTable') 
 
 document.getElementById('createBtn').addEventListener('click', () => {
     const body = {
@@ -9,59 +9,59 @@ document.getElementById('createBtn').addEventListener('click', () => {
         code: document.getElementById('code').value,
         stock: document.getElementById('stock').value,
         category: document.getElementById('category').value,
-    } // crea un objeto con los datos del formulario
+    } 
     fetch('/api/products', {
         method: 'POST', 
         body: JSON.stringify(body), 
         headers: {
             'Content-Type': 'application/json'
         }, 
-    }) // fetch para crear un producto
+    }) 
     .then(result => result.json()) 
     .then(result => {
         if (result.status === 'error') throw new Error(result.error)
     }) // si el resultado es un error, lanza una excepción
-    .then(() => fetch('/api/products?limit=10000')) 
+    .then(() => fetch('/api/products?limit=10000'))
     .then(result => result.json()) 
     .then(result => {
         if (result.status === 'error') throw new Error(result.error)
         else socket.emit('productList', result.payload) 
         alert('Producto creado con éxito!')
-        document.getElementById('title').value = '' 
+        document.getElementById('title').value = ''
         document.getElementById('description').value = ''
         document.getElementById('price').value = ''
         document.getElementById('code').value = ''
         document.getElementById('stock').value = ''
         document.getElementById('category').value = ''
-    })
+    }) 
     .catch(error => alert(`Ocurrio un error : ${error}`)) 
 })
 
 deleteProduct = (id) => {
     console.log(id);
     fetch(`/api/products/${id}`, {
-      method: 'DELETE',
+        method: 'DELETE',
     })
-      .then((result) => {
+    .then((result) => {
         if (result.ok) {
-          alert('Producto eliminado con éxito!');
+            alert('Producto eliminado con éxito!');
         } else {
-          throw new Error('Error al eliminar el producto');
+            throw new Error('Error al eliminar el producto');
         }
-      })
-      .then(() => fetch('/api/products?limit=10000'))
-      .then((result) => result.json())
-      .then((result) => {
+    })
+    .then(() => fetch('/api/products?limit=10000'))
+    .then((result) => result.json())
+    .then((result) => {
         if (result.status === 'error') throw new Error(result.error);
         else socket.emit('productList', result.payload);
-      })
-      .catch((error) => alert(`Ocurrió un error: ${error}`));
-  };
+    })
+    .catch((error) => alert(`Ocurrió un error: ${error}`));
+};
 
 socket.on('updatedProducts', data => {
     console.log(data)
     const tbody = table.getElementsByTagName('tbody')[0];
-    tbody.innerHTML = '';
+    tbody.innerHTML = ''; // Eliminar los elementos antiguos de la tabla
 
     for (const product of data) {
         const tr = document.createElement('tr');

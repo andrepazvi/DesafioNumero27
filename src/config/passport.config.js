@@ -4,73 +4,73 @@ import GithubStrategy from 'passport-github2';
 import UserModel from '../dao/models/user.model.js';
 import { hasAdminCredentials } from "../public/js/authMiddleware.js";
 import bcrypt from 'bcryptjs';
+import config from './config.js';
+
+// Datos de configuración de la estrategia de autenticación con Github
+const githubClientID = config.githubClientId;
+const githubClientSecret = config.githubClientSecret;
 
 const initializePassport = () => {
-  passport.use('register', new localStrategy({
-    passReqToCallback: true,
-    usernameField: 'email',
-  }, async (req, username, password, done) => {
+
+    passport.use('register', new localStrategy({
+        passReqToCallback: true,
+        usernameField: 'email',
+    }, async (req, username, password, done) => {
     const { first_name, last_name, email, age } = req.body;
     try {
-      const user = await UserModel.findOne({ email: username });
-      if (user) {
-        return done(null, false, { message: 'El correo electrónico ya está en uso.' });
-      }
-  
-      // Encriptar la contraseña utilizando bcryptjs
-      const saltRounds = 10;
-      const hashedPassword = bcrypt.hashSync(password, saltRounds);
-      const newUser = new UserModel({
-        first_name,
-        last_name,
-        email,
-        age,
-        password: hashedPassword,
-        role: 'usuario' 
-      });
-  
-      await newUser.save();
-  
-      return done(null, newUser);
+        const user = await UserModel.findOne({ email: username });
+        if (user) {
+            return done(null, false, { message: 'El correo electrónico ya está en uso.' });
+        }
+
+        // Verificar si las credenciales son de administrador
+        const isAdminCredentials = hasAdminCredentials(email, password);
+
+        // Encriptar la contraseña utilizando bcryptjs
+        const saltRounds = 10; 
+        const hashedPassword = bcrypt.hashSync(password, saltRounds);
+        const newUser = new UserModel({
+            first_name,
+            last_name,
+            email,
+            age,
+            password: hashedPassword, 
+            role: isAdminCredentials ? 'admin' : 'usuario'
+        });
+
+        await newUser.save();
+
+        const userNew = {
+            _id: newUser._id,
+            first_name: newUser.first_name,
+            last_name: newUser.last_name,
+            email: newUser.email,
+            age: newUser.age,
+            role: newUser.role
+        }
+
+        // Almacenar toda la información del usuario en la sesión
+        // req.session.user = userNew;
+
+        return done(null, newUser);
     } catch (error) {
-      console.log(error.message);
-      return done(error);
+        console.log(error.message);
+        return done(error);
     }
-  }));
-  
-  passport.use('login', new localStrategy({
-    usernameField: 'email',
-  }, async (username, password, done) => {
-    try {
-      const user = await UserModel.findOne({ email: username });
-      if (!user) {
-        return done(null, false, { message: 'Credenciales inválidas.' });
-      }
-  
-      const passwordsMatch = await bcrypt.compareSync(password, user.password);
-      if (!passwordsMatch) {
-        return done(null, false, { message: 'Credenciales inválidas.' });
-      }
-  
-      return done(null, user);
-    } catch (error) {
-      console.log(error.message);
-      return done(error);
-    }
-  }));
-  
+    }));
+
     passport.use('login', new localStrategy({
-      usernameField: 'email',
+        usernameField: 'email',
     }, async (username, password, done) => {
-      try {
+    try {
         const user = await UserModel.findOne({ email: username });
         if (!user) {
-          return done(null, false, { message: 'Credenciales inválidas.' });
+            return done(null, false, { message: 'Credenciales inválidas.' });
         }
-  
+
         const passwordsMatch = await bcrypt.compareSync(password, user.password);
         if (!passwordsMatch) {
-          return done(null, false, { message: 'Credenciales inválidas.' });
+            return done(null, false, { message: 'Credenciales inválidas.' });
         }
 
         const userSession = {
@@ -83,15 +83,15 @@ const initializePassport = () => {
         }
 
         return done(null, user);
-      } catch (error) {
+    } catch (error) {
         console.log(error.message);
         return done(error);
-      }
+    }
     }));
     
     passport.use('github', new GithubStrategy({
-        clientID: 'Iv1.c18594c8bcbceefc',
-        clientSecret: 'a24f499a2b4aae36add90c52f0f7901f116de3a5',
+        clientID: githubClientID,
+        clientSecret: githubClientSecret,
         callbackURL: 'http://localhost:8080/api/sessions/githubcallback'
     }, async (accessToken, refreshToken, profile, done) => {
         console.log(profile)
